@@ -3,7 +3,7 @@ import Dashboard from './components/Dashboard';
 import Login from './Pages/Login';
 import Logout from './Pages/Logout';
 import { Route, Routes, useNavigate } from "react-router-dom";
-import Register from './Pages/Registor';
+import Register from './Pages/Register';
 import UserPage from './Pages/UserPage';
 import SuccessMessage from './Pages/successMessage';
 import ResetPassword from './Pages/Reset';
