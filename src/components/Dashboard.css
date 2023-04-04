@@ -1,0 +1,4 @@
+.whole-dashboard{
+    display: flex;
+    flex-wrap:wrap;
+}
