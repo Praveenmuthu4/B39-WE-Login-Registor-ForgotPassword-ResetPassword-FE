@@ -1,44 +1,81 @@
 import { Button, Link } from "@mui/material";
 import React, { useState } from "react";
-import { useFormik } from "formik";
-import * as yup from "yup";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import "./login.css";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import { API } from "../global";
 
-const formValidationSchema = yup.object({
-  email: yup.string().min(5,"Please enter valid").matches("@gmail.com").required("Please a valid Email id"),
-  password: yup
-    .string()
-    .matches(/^(?=.*?[0-9])(?=.*?[a-z])(?=.*?[A-Z])(?=.*?[#!@%&]).{8,}$/g,"Please enter a valid password")
-    .required("Please enter your password"),
-});
 
 export default function Login() {
   const navigate = useNavigate();
+  const history = useNavigate();
 
   const [passshow, setpassshow] = useState(false);
+  const [inpval, setInpval] = useState({
+    email: "",
+    password: "",
+});
 
-  const formik = useFormik({
-    initialValues: { email: "", password: "" },
-    validationSchema: formValidationSchema,
-    onSubmit: (values) => {
-    //   loginUser(values);
-      console.log("onSubmit", values);
-    },
-  });
+const setVal = (e) => {
+  const { name, value } = e.target;
 
-//   const loginUser = (add) => {
-//     fetch(`${API}/users/login`, {
-//       method: "POST",
-//       body: JSON.stringify(add),
-//       headers: {
-//         "Content-Type": "application/json",
-//       },
-//     });
-//   };
+  setInpval(() => {
+      return {
+          ...inpval,
+          [name]: value
+      }
+  })
+};
 
+const loginuser = async(e) => {
+  e.preventDefault();
+
+  const { email, password } = inpval;
+
+  if (email === "") {
+      toast.error("email is required!", {
+          position: "top-center"
+      });
+  } else if (!email.includes("@")) {
+      toast.warning("includes @ in your email!", {
+          position: "top-center"
+      });
+  } else if (password === "") {
+      toast.error("password is required!", {
+          position: "top-center"
+      });
+  } else if (password.length < 6) {
+      toast.error("password must be 6 char!", {
+          position: "top-center"
+      });
+  } else {
+
+      const data = await fetch(`${API}/login`,{
+          method:"POST",
+          headers:{
+              "Content-Type":"application/json"
+          },
+          body:JSON.stringify({
+               email, password
+          })
+      });
+
+      const res = await data.json();
+      //  console.log(res);
+
+      if(res.status === 201){
+          localStorage.setItem("usersdatatoken",res.result.token);
+          history("/logout")
+          setInpval({...inpval,email:"",password:""});
+      }else{
+          toast.error("Invalid Credentials", {
+              position: "top-center"
+          });
+      }
+  }
+}
   return (
     <section>
       <div className="form_data">
@@ -46,7 +83,7 @@ export default function Login() {
           <h1>Welcome Back, Log In</h1>
           <p>Hi, we are glad you are back. Please login.</p>
         </div>
-        <form onSubmit={formik.handleSubmit}>
+        <form >
           <div className="form_input_1">
             <label>Username:</label>
             <input
@@ -54,12 +91,10 @@ export default function Login() {
               type='email'
               name="email"
               placeholder="Enter your Username"
-              value={formik.values.email}
-              onBlur={formik.handleBlur}
-              onChange={formik.handleChange}
+              value={inpval.email}
+              onChange={setVal}
             />
           </div>
-          {formik.touched.email && formik.errors.email ? formik.errors.email : ""}
           <div className="form_input">
             <div className="two">
               <label>Password:</label>
@@ -68,9 +103,8 @@ export default function Login() {
                 placeholder="Enter your Password"
                 type={!passshow ? "password" : "text"}
                 name="password"
-                value={formik.values.password}
-                onBlur={formik.handleBlur}
-                onChange={formik.handleChange}
+                value={inpval.password}
+              onChange={setVal}
               />
               <div className="showpass" onClick={() => setpassshow(!passshow)}>
                 {" "}
@@ -78,12 +112,11 @@ export default function Login() {
               </div>
             </div>
           </div>
-          {formik.touched.password && formik.errors.password ? formik.errors.password : ""}
-          <Button type="submit" size="small" className="btn" onClick={()=>navigate('/userDashboard')}>
+          <Button type="submit" size="small" className="btn"  onClick={loginuser}>
             Login
           </Button>
           <div className="bottom_form_data">
-            <Link href="#" underline="hover" className="link" onClick={()=>navigate('/forgotPassword')}>
+            <Link href="#" underline="hover" className="link" onClick={()=>navigate('/resetPassword')}>
               Forget Password?
             </Link>
             <p className="for_signup">Don't have Account?</p>

@@ -1,0 +1,1 @@
+export const API = 'https://login-register-resetpassword-backend.onrender.com';

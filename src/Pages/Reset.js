@@ -1,50 +1,68 @@
-import {TextField, Button, Box, Alert } from "@mui/material";
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Grid from '@mui/material/Grid';
+import React, { useState } from 'react'
+import { ToastContainer, toast } from 'react-toastify';
+import { API } from '../global';
 
-export default function ResetPassword() {
-  const navigate = useNavigate()
-  const [error, setError] = useState({
-    status: false,
-    msg: "",
-    type: ""
-  })
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const data = new FormData(e.currentTarget);
-    const actualData = {
-      password: data.get('password'),
-      password_confirmation: data.get('password_confirmation'),
+export default function ResetPassword(){
+
+    const [email, setEmail] = useState("");
+
+    const [message, setMessage] = useState("");
+
+    const setVal = (e) => {
+        setEmail(e.target.value)
     }
-    if (actualData.password && actualData.password_confirmation) {
-      if (actualData.password === actualData.password_confirmation) {
-        console.log(actualData);
-        document.getElementById('password-reset-form').reset()
-        setError({ status: true, msg: "Password Reset Successfully. Redirecting to Login Page...", type: 'success' })
-        setTimeout(() => {
-          navigate("/login")
-        }, 3000)
-      } else {
-        setError({ status: true, msg: "Password and Confirm Password Doesn't Match", type: 'error' })
-      }
-    } else {
-      setError({ status: true, msg: "All Fields are Required", type: 'error' })
+
+    const sendLink = async (e) => {
+        e.preventDefault();
+
+        if (email === "") {
+            toast.error("email is required!", {
+                position: "top-center"
+            });
+        } else if (!email.includes("@")) {
+            toast.warning("includes @ in your email!", {
+                position: "top-center"
+            });
+        } else {
+            const res = await fetch(`${API}/sendpasswordlink`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ email })
+            });
+
+            const data = await res.json();
+
+            if (data.status == 201) {
+                setEmail("");
+                setMessage(true)
+            } else {
+                toast.error("Invalid User",{
+                    position: "top-center"
+                })
+            }
+        }
     }
-  }
-  return (
-    <Grid>
-      <Grid item sm={6} xs={12}>
-        <h1>Reset Password</h1>
-        <Box component='form' noValidate sx={{ mt: 1 }} id='password-reset-form' onSubmit={handleSubmit}>
-          <TextField margin='normal' required fullWidth id='password' name='password' label='New Password' type='password' />
-          <TextField margin='normal' required fullWidth id='password_confirmation' name='password_confirmation' label='Confirm New Password' type='password' />
-          <Box textAlign='center'>
-            <Button type='submit' variant='contained' sx={{ mt: 3, mb: 2, px: 5 }}>Save</Button>
-          </Box>
-          {error.status ? <Alert severity={error.type}>{error.msg}</Alert> : ''}
-        </Box>
-      </Grid>
-    </Grid>
-  )
-};
+
+    return (
+            <section>
+                <div className="form_data">
+                    <div className="form_heading">
+                        <h1>Enter Your Email</h1>
+                    </div>
+
+                    {message ? <p style={{ color: "green", fontWeight: "bold" }}>pasword reset link send Succsfully in Your Email</p> : ""}
+                    <form>
+                        <div className="form_input">
+                            <label htmlFor="email">Email</label>
+                            <input type="email" value={email} onChange={setVal} name="email" id="email" placeholder='Enter Your Email Address' />
+                        </div>
+
+                        <button className='btn' onClick={sendLink}>Send</button>
+                    </form>
+                    <ToastContainer />
+                </div>
+            </section>
+    )
+}

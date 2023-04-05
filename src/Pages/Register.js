@@ -1,58 +1,145 @@
-import { TextField, FormControlLabel, Checkbox, Button, Box, Alert } from '@mui/material';
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import "./Registration.css";
+import { Link } from '@mui/material';
+import React, { useState } from 'react'
+import { NavLink, useNavigate } from "react-router-dom"
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { API } from '../global';
 
-export default function Registration(){
-    
-  const [error, setError] = useState({
-    status: false,
-    msg: "",
-    type: ""
-  })
+export default function Register() {
+
   const navigate = useNavigate();
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const data = new FormData(e.currentTarget);
-    const actualData = {
-      name: data.get('name'),
-      email: data.get('email'),
-      password: data.get('password'),
-      password_confirmation: data.get('password_confirmation'),
-      tc: data.get('tc'),
-    }
-    if (actualData.name && actualData.email && actualData.password && actualData.password_confirmation && actualData.tc !== null) {
-      if (actualData.password === actualData.password_confirmation) {
-        console.log(actualData);
-        document.getElementById('registration-form').reset()
-        setError({ status: true, msg: "Registration Successful", type: 'success' })
-        navigate('/login')
-      } else {
-        setError({ status: true, msg: "Password and Confirm Password Doesn't Match", type: 'error' })
-      }
-    } else {
-      setError({ status: true, msg: "All Fields are Required", type: 'error' })
-    }
-  }
-  return (
-    <section>
-        <h4>Please Enter your Details for Registration</h4>
-    <form className='registration_form' component='form' noValidate sx={{ mt: 1 }} id='registration-form' onSubmit={handleSubmit}>
-    <label>Name:</label>
-    <TextField margin='normal' required id='name' name='name' placeholder='Name' />
+    const [passShow, setPassShow] = useState(false);
+    const [cpassShow, setCPassShow] = useState(false);
 
-        <label>Email:</label>
-      <TextField margin='normal' required id='email' name='email' placeholder='Email Address' />
-      <label>Password:</label>
-      <TextField margin='normal' required id='password' name='password' placeholder='Password' type='password' />
-      <label>Confirm Password:</label>
-      <TextField margin='normal' required id='password_confirmation' name='password_confirmation' placeholder='Confirm Password' type='password' />
-      <FormControlLabel control={<Checkbox value="agree" color="primary" name="tc" id="tc" />} label="I agree to term and condition." />
-      <Box textAlign='center'>
-        <Button type='submit' variant='contained' sx={{ mt: 3, mb: 2, px: 5 }}>Join</Button>
-      </Box>
-      {error.status ? <Alert severity={error.type}>{error.msg}</Alert> : ''}
-    </form>
-    </section>
-  )
+    const [inpval, setInpval] = useState({
+        name: "",
+        email: "",
+        password: "",
+        cpassword: ""
+    });
+
+
+    const setVal = (e) => {
+        // console.log(e.target.value);
+        const { name, value } = e.target;
+
+        setInpval(() => {
+            return {
+                ...inpval,
+                [name]: value
+            }
+        })
+    };
+
+    const addUserdata = async (e) => {
+        e.preventDefault();
+
+        const { name, email, password, cpassword } = inpval;
+
+        if (name === "") {
+            toast.warning("fname is required!", {
+                position: "top-center"
+            });
+        } else if (email === "") {
+            toast.error("email is required!", {
+                position: "top-center"
+            });
+        } else if (!email.includes("@")) {
+            toast.warning("includes @ in your email!", {
+                position: "top-center"
+            });
+        } else if (password === "") {
+            toast.error("password is required!", {
+                position: "top-center"
+            });
+        } else if (password.length < 6) {
+            toast.error("password must be 6 char!", {
+                position: "top-center"
+            });
+        } else if (cpassword === "") {
+            toast.error("cpassword is required!", {
+                position: "top-center"
+            });
+        }
+        else if (cpassword.length < 6) {
+            toast.error("confirm password must be 6 char!", {
+                position: "top-center"
+            });
+        } else if (password !== cpassword) {
+            toast.error("pass and Cpass are not matching!", {
+                position: "top-center"
+            });
+        } else {
+            // console.log("user registration succesfully done");
+
+
+            const data = await fetch(`${API}/register`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    name, email, password, cpassword
+                })
+            });
+
+            const res = await data.json();
+            // console.log(res.status);
+
+            if (res.status === 201) {
+                toast.success("Registration Successfully done 😃!", {
+                    position: "top-center"
+                });
+                setInpval({ ...inpval, name: "", email: "", password: "", cpassword: "" });
+            }
+        }
+    }
+
+    return (
+        <>
+            <section>
+                <div className="form_data">
+                    <div className="form_heading">
+                        <h1>Sign Up</h1>
+                        <p style={{ textAlign: "center" }}>We are glad that you will be using Project Cloud to manage <br />
+                            your tasks! We hope that you will get like it.</p>
+                    </div>
+
+                    <form>
+                        <div className="form_input">
+                            <label >Name</label>
+                            <input type="text" onChange={setVal} value={inpval.name} name="name" id="name" placeholder='Enter Your Name' />
+                        </div>
+                        <div className="form_input">
+                            <label >Email</label>
+                            <input type="email" onChange={setVal} value={inpval.email} name="email" id="email" placeholder='Enter Your Email Address' />
+                        </div>
+                        <div className="form_input">
+                            <label>Password</label>
+                            <div className="two">
+                                <input type={!passShow ? "password" : "text"} value={inpval.password} onChange={setVal} name="password" id="password" placeholder='Enter Your password' />
+                                <div className="showpass" onClick={() => setPassShow(!passShow)}>
+                                    {!passShow ? "Show" : "Hide"}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="form_input">
+                            <label>Confirm Password</label>
+                            <div className="two">
+                                <input type={!cpassShow ? "password" : "text"} value={inpval.cpassword} onChange={setVal} name="cpassword" id="cpassword" placeholder='Confirm password' />
+                                <div className="showpass" onClick={() => setCPassShow(!cpassShow)}>
+                                    {!cpassShow ? "Show" : "Hide"}
+                                </div>
+                            </div>
+                        </div>
+
+                        <button className='btn' onClick={addUserdata}>Sign Up</button>
+                        <p>Already have an account? <Link href="#" underline="hover" onClick={()=>navigate('/')}>Log In</Link></p>
+                    </form>
+                    <ToastContainer />
+                </div>
+            </section>
+        </>
+    )
 }

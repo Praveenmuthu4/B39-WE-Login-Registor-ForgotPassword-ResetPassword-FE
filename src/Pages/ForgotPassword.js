@@ -1,39 +1,118 @@
-import { Grid, TextField, Button, Box, Alert } from "@mui/material";
-import { useState } from 'react';
+import React, { useEffect, useState } from 'react'
+import { useNavigate, useParams, NavLink } from 'react-router-dom';
+import { ToastContainer, toast } from 'react-toastify';
+import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress';
+import { API } from '../global';
+import { Link } from '@mui/material';
+
+export default function ForgotPassword(){
+
+    const { id, token } = useParams();
+
+    const history = useNavigate();
+
+    const [data2, setData] = useState(false);
+
+    const [password, setPassword] = useState("");
+
+    const [message, setMessage] = useState("");
+
+    const navigate = useNavigate();
+
+    const userValid = async () => {
+        const res = await fetch(`${API}/forgotpassword/${id}/${token}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        });
+
+        const data = await res.json()
+
+        if (data.status == 201) {
+            console.log("user valid")
+        } else {
+            history("*")
+        }
+    }
 
 
- export default function ForgotPassword(){
-  const [error, setError] = useState({
-    status: false,
-    msg: "",
-    type: ""
-  })
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const data = new FormData(e.currentTarget);
-    const actualData = {
-      email: data.get('email'),
+    const setval = (e) => {
+        setPassword(e.target.value)
     }
-    if (actualData.email) {
-      console.log(actualData);
-      document.getElementById('password-reset-email-form').reset()
-      setError({ status: true, msg: "Password Reset Email Sent. Check Your Email !!", type: 'success' })
-    } else {
-      setError({ status: true, msg: "Please Provide Valid Email", type: 'error' })
+
+    const sendpassword = async (e) => {
+        e.preventDefault();
+
+        if (password === "") {
+            toast.error("password is required!", {
+                position: "top-center"
+            });
+        } else if (password.length < 6) {
+            toast.error("password must be 6 char!", {
+                position: "top-center"
+            });
+        } else {
+            const res = await fetch(`${API}/${id}/${token}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ password })
+            });
+
+            const data = await res.json()
+
+            if (data.status == 201) {
+                setPassword("")
+                setMessage(true)
+            } else {
+                toast.error("! Token Expired generate new LInk",{
+                    position: "top-center"
+                })
+            }
+        }
     }
-  }
-  return (
-    <Grid container justifyContent='center'>
-      <Grid item sm={6} xs={12}>
-        <h1>Reset Password</h1>
-        <Box component='form' noValidate sx={{ mt: 1 }} id='password-reset-email-form' onSubmit={handleSubmit}>
-          <TextField margin='normal' required fullWidth id='email' name='email' label='Email Address' />
-          <Box textAlign='center'>
-            <Button type='submit' variant='contained' sx={{ mt: 3, mb: 2, px: 5 }}>Send</Button>
-          </Box>
-          {error.status ? <Alert severity={error.type}>{error.msg}</Alert> : ''}
-        </Box>
-      </Grid>
-    </Grid>
-  );
+
+    useEffect(() => {
+        userValid()
+        setTimeout(() => {
+            setData(true)
+        }, 3000)
+    }, [])
+
+    return (
+        <>
+            {
+                data2 ? (
+                    <>
+                        <section>
+                            <div className="form_data">
+                                <div className="form_heading">
+                                    <h1>Enter Your NEW Password</h1>
+                                </div>
+
+                                <form>
+                                    {message ? <p style={{ color: "green", fontWeight: "bold" }}>Password Succesfulyy Update </p> : ""}
+                                    <div className="form_input">
+                                        <label htmlFor="password">New password</label>
+                                        <input type="password" value={password} onChange={setval} name="password" id="password" placeholder='Enter Your new password' />
+                                    </div>
+
+                                    <button className='btn' onClick={sendpassword}>Send</button>
+                                </form>
+                                <p><Link href='#' underline='hover' onClick={()=>navigate("/")}>Home</Link></p>
+                                <ToastContainer />
+                            </div>
+                        </section>
+                    </>
+                ) : <Box sx={{ display: 'flex', justifyContent: "center", alignItems: "center", height: "100vh" }}>
+                    Loading... &nbsp;
+                    <CircularProgress />
+                </Box>
+            }
+        </>
+    )
 }
+
